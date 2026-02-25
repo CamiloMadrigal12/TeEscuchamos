@@ -13,10 +13,8 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700">
       <div className="mx-auto max-w-6xl px-4 py-12 grid lg:grid-cols-2 gap-10 items-center">
-        
         {/* LADO IZQUIERDO */}
         <div className="text-white">
-
           {/* Logos institucionales */}
           <div className="flex items-center gap-6 mb-6">
             <img
@@ -50,15 +48,53 @@ export default function Login() {
 
           <form
             className="mt-6 space-y-4"
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
-              localStorage.setItem("token", "demo-token");
-              nav("/");
+
+              const form = e.currentTarget as HTMLFormElement;
+              const fd = new FormData(form);
+
+              const username = String(fd.get("username") || "").trim();
+              const password = String(fd.get("password") || "");
+
+              if (!username || !password) {
+                alert("Ingrese usuario y contraseña");
+                return;
+              }
+
+              try {
+                const r = await fetch("/api/auth-login", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ username, password }),
+                });
+
+                const data = await r.json().catch(() => ({}));
+
+                if (!r.ok || !data?.token) {
+                  alert(data?.error || "Usuario o contraseña inválidos");
+                  return;
+                }
+
+                localStorage.setItem("token", data.token);
+                localStorage.setItem("user", JSON.stringify(data.user || {}));
+                nav("/");
+              } catch {
+                alert("No se pudo conectar con el servidor");
+              }
             }}
           >
-            <Input label="Usuario" placeholder="usuario" required />
-            <Input label="Contraseña" type="password" placeholder="••••••••" required />
-            <Button className="w-full" type="submit">Entrar </Button>
+            <Input name="username" label="Usuario" placeholder="usuario" required />
+            <Input
+              name="password"
+              label="Contraseña"
+              type="password"
+              placeholder="••••••••"
+              required
+            />
+            <Button className="w-full" type="submit">
+              Entrar
+            </Button>
           </form>
         </Card>
       </div>
