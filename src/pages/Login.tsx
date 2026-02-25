@@ -58,7 +58,7 @@ export default function Login() {
           >
             <Input label="Usuario" placeholder="usuario" required />
             <Input label="Contraseña" type="password" placeholder="••••••••" required />
-            <Button className="w-full" type="submit">Entrar</Button>
+            <Button className="w-full" type="submit">Entrar </Button>
           </form>
         </Card>
       </div>
