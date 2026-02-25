@@ -89,7 +89,7 @@ export default function Login() {
               name="password"
               label="Contraseña"
               type="password"
-              placeholder="••••••••"
+              placeholder="••"
               required
             />
             <Button className="w-full" type="submit">
