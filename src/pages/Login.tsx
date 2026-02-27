@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Card from "../components/Card";
 import Input from "../components/Input";
 import Button from "../components/Button";
+import { supabase } from "../services/supabaseClient";
 
 // 👇 IMPORTAR LAS IMÁGENES
 import logoAlcaldia from "../../logos/logoalcaldia.png";
@@ -9,25 +11,16 @@ import logoTeEscuchamos from "../../logos/teescuchamos.png";
 
 export default function Login() {
   const nav = useNavigate();
+  const [loading, setLoading] = useState(false);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700">
       <div className="mx-auto max-w-6xl px-4 py-12 grid lg:grid-cols-2 gap-10 items-center">
         {/* LADO IZQUIERDO */}
         <div className="text-white">
-          {/* Logos institucionales */}
           <div className="flex items-center gap-6 mb-6">
-            <img
-              src={logoAlcaldia}
-              alt="Alcaldía de Copacabana"
-              className="h-14 object-contain"
-            />
-
-            <img
-              src={logoTeEscuchamos}
-              alt="Te Escuchamos"
-              className="h-14 object-contain"
-            />
+            <img src={logoAlcaldia} alt="Alcaldía de Copacabana" className="h-14 object-contain" />
+            <img src={logoTeEscuchamos} alt="Te Escuchamos" className="h-14 object-contain" />
           </div>
 
           <h1 className="text-4xl font-black tracking-tight">
@@ -50,50 +43,41 @@ export default function Login() {
             className="mt-6 space-y-4"
             onSubmit={async (e) => {
               e.preventDefault();
+              setLoading(true);
 
               const form = e.currentTarget as HTMLFormElement;
               const fd = new FormData(form);
 
-              const username = String(fd.get("username") || "").trim();
+              const email = String(fd.get("email") || "").trim();
               const password = String(fd.get("password") || "");
 
-              if (!username || !password) {
+              if (!email || !password) {
                 alert("Ingrese usuario y contraseña");
+                setLoading(false);
                 return;
               }
 
-              try {
-                const r = await fetch("/api/auth-login", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ username, password }),
-                });
+              const { data, error } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+              });
 
-                const data = await r.json().catch(() => ({}));
+              setLoading(false);
 
-                if (!r.ok || !data?.token) {
-                  alert(data?.error || "Usuario o contraseña inválidos");
-                  return;
-                }
-
-                localStorage.setItem("token", data.token);
-                localStorage.setItem("user", JSON.stringify(data.user || {}));
-                nav("/");
-              } catch {
-                alert("No se pudo conectar con el servidor");
+              if (error || !data.session) {
+                alert("Usuario o contraseña inválidos");
+                return;
               }
+
+              // ✅ sesión queda guardada por Supabase (localStorage)
+              nav("/");
             }}
           >
-            <Input name="username" label="Usuario" placeholder="usuario" required />
-            <Input
-              name="password"
-              label="Contraseña"
-              type="password"
-              placeholder="••"
-              required
-            />
-            <Button className="w-full" type="submit">
-              Entrar
+            <Input name="email" label="Usuario (correo)" placeholder="correo@dominio.com" required />
+            <Input name="password" label="Contraseña" type="password" placeholder="••••••••" required />
+
+            <Button className="w-full" type="submit" disabled={loading}>
+              {loading ? "Ingresando..." : "Entrar"}
             </Button>
           </form>
         </Card>
