@@ -41,22 +41,102 @@ const BARRIOS_VEREDAS = [
   "Pedrera",
   "San Francisco",
   "Miraflores",
-  "horizontes"
+  "horizontes",
 ];
+
+// Tipificaciones según tu Excel (captura)
+const TIPIFICACIONES = {
+  tipo_orientacion: [
+    "PRIMERA VEZ",
+    "SEGUIMIENTO",
+    "SEGUIMIENTO COMPORTAMIENTO S",
+    "SEGUIMIENTO VIOLENCIA SEXUAL",
+    "GESTION DE CASO",
+  ],
+
+  tipo_documento: ["CC", "TI", "RC", "PPT", "CE", "PASAPORTE", "OTRO"],
+
+  sexo: ["HOMBRE", "MUJER", "OTRO"],
+
+  poblacion: [
+    "INFANCIA",
+    "JUVENTUD",
+    "ADULTEZ",
+    "ADULTO MAYOR",
+    "DISCAPACIDAD",
+    "LGTBIQ+",
+    "MCF",
+    "VICTIMA DEL CONFLICTO ARMADO",
+    "MIGRANTE",
+    "CAMPESINO",
+    "HABITANTE DE CALLE",
+    "PPL",
+    "COMUNIDADES ETNICAS",
+  ],
+
+  eps: [
+    "SURA",
+    "SAVIA SALUD",
+    "NUEVA EPS",
+    "SALUD TOTAL",
+    "SANITAS",
+    "FOMAG",
+    "SANIDAD MILITAR",
+    "POLICIA NACIONAL",
+    "OTRA",
+  ],
+
+  motivo_atencion: [
+    "PROBLEMAS FAMILIARES",
+    "CONSUMO DE SPA",
+    "CONDUCTA SUICIDA",
+    "VIOLENCIA SEXUAL",
+    "VIOLENCIA INTRAFAMILIAR",
+    "GESTION DE CASO",
+    "INFORMACIÓN",
+    "OTRO",
+  ],
+
+  canal_atencion: ["FIJO", "LINEA", "DERIVACIÓN", "OTRO"],
+
+  activacion_ruta: ["SI", "NO"],
+
+  derivado_a: [
+    "HOSPITAL",
+    "BOMBEROS",
+    "EPS",
+    "GESTION DE CASO",
+    "PERSONERIA",
+    "COMISARIA",
+    "INSPECCIÓN",
+    "OTRO",
+  ],
+
+  tipo_acudiente: [
+    "MADRE",
+    "PADRE",
+    "HERMANO(A)",
+    "ABUELO(A)",
+    "TIO(A)",
+    "TUTOR(A)",
+    "OTRO",
+  ],
+
+  pendiente_cita_presencial: ["SI", "NO"],
+};
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (allowCors(req, res)) return;
 
-  // Tipificaciones base (ajústalas a tu archivo VARIABLES BASE DE DATOS.xlsx cuando quieras)
+  // Si deseas restringir método:
+  if (req.method !== "GET") {
+    return sendJson(res, 405, { error: "Method Not Allowed" });
+  }
+
   const data = {
-    tipo_documento: ["CC", "TI", "CE", "PA", "RC", "NIT", "OTRO"],
-    activa_ruta: ["SI", "NO"],
-    pendiente_cita_presencial: ["SI", "NO"],
+    ...TIPIFICACIONES,
     barrio_vereda: BARRIOS_VEREDAS,
-    // Estas quedan abiertas por ahora; puedes llenarlas con tu catálogo real
-    genero: ["Femenino", "Masculino", "Otro", "No responde"],
-    canal_atencion: ["Presencial", "Telefónico", "WhatsApp", "Correo", "Otro"],
   };
 
-  sendJson(res, 200, data);
+  return sendJson(res, 200, data);
 }
