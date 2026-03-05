@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import bcrypt from "bcryptjs";
 import { db } from "./_db";
 import { signToken } from "./_auth";
+import { allowCors, sendJson } from "./_graph.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {

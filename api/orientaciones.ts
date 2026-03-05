@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { allowCors, getAppToken, resolveDriveItem, graphFetch, tableName, sendJson } from "./_graph";
+import { allowCors, getAppToken, resolveDriveItem, graphFetch, tableName, sendJson } from "./_graph.js";
 
 type RowValue = any[];
 
