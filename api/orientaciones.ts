@@ -32,12 +32,13 @@ const COLS = [
   "PENDIENTE_CITA_PRESENCIAL",
   "PROFESIONAL",
   "CREATED_AT",
-  "UPDATED_AT"
+  "UPDATED_AT",
 ] as const;
 
 function toExcelRow(body: any): RowValue {
   const created = nowISO();
   const updated = created;
+
   return [
     body.id ?? body.ID ?? "",
     body.tipo_documento ?? body.TIPO_DOCUMENTO ?? "",
@@ -69,19 +70,18 @@ function toExcelRow(body: any): RowValue {
 function rowToObject(values: any[]): any {
   const obj: any = {};
   COLS.forEach((c, i) => {
-    const key = c.toLowerCase();
-    obj[key] = values[i];
+    obj[c.toLowerCase()] = values[i];
   });
-  // compat keys for frontend
   obj.id = obj.id ?? obj["id"];
   return obj;
 }
 
 async function listRows(token: string, driveId: string, itemId: string) {
   const tname = tableName();
-  // Trae filas (sin paginación por simplicidad). Si crece mucho, se agrega paginación/índice.
-  // GET /drives/{driveId}/items/{itemId}/workbook/tables/{table}/rows?$top=10000
-  const r = await graphFetch<any>(token, `/drives/${driveId}/items/${itemId}/workbook/tables/${encodeURIComponent(tname)}/rows?$top=10000`);
+  const r = await graphFetch<any>(
+    token,
+    `/drives/${driveId}/items/${itemId}/workbook/tables/${encodeURIComponent(tname)}/rows?$top=10000`
+  );
   return (r.value || []) as Array<{ index: number; values: any[][] }>;
 }
 
@@ -91,7 +91,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const token = await getAppToken();
     const { driveId, itemId } = await resolveDriveItem(token);
-    if (!driveId || !itemId) throw new Error("No pude resolver driveId/itemId. Verifica FILE_SHARE_URL.");
+
+    if (!driveId || !itemId) {
+      throw new Error("No pude resolver driveId/itemId. Verifica FILE_SHARE_URL.");
+    }
 
     if (req.method === "GET") {
       const id = String(req.query.id ?? "").trim();
@@ -99,8 +102,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const rows = await listRows(token, driveId, itemId);
       const items = rows
-        .map(r => rowToObject(r.values?.[0] || []))
-        .filter(o => String(o.id ?? "").trim() === id);
+        .map((r) => rowToObject(r.values?.[0] || []))
+        .filter((o) => String(o.id ?? "").trim() === id);
 
       return sendJson(res, 200, { found: items.length > 0, items });
     }
@@ -113,8 +116,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const row = toExcelRow(body);
       const tname = tableName();
 
-      // POST /drives/{driveId}/items/{itemId}/workbook/tables/{table}/rows/add
-      const add = await graphFetch<any>(token,
+      await graphFetch<any>(
+        token,
         `/drives/${driveId}/items/${itemId}/workbook/tables/${encodeURIComponent(tname)}/rows/add`,
         {
           method: "POST",
@@ -122,7 +125,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       );
 
-      // Retorna OK (Graph devuelve row/indices; devolvemos id)
       return sendJson(res, 200, { ok: true, id });
     }
 
