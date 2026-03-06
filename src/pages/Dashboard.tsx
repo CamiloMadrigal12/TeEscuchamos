@@ -86,10 +86,7 @@ export default function Dashboard() {
             <Button variant="ghost" className="mt-4" onClick={() => nav("/crear")}>Crear →</Button>
           </Card>
 
-          <Card className="p-5">
-            <div className="text-sm font-semibold text-slate-700">Integración</div>
-            <div className="text-xs text-slate-500 mt-1">Listo para conectar tu API (Graph + Excel).</div>
-          </Card>
+          
         </div>
       </main>
     </div>
