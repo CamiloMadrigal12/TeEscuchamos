@@ -4,23 +4,12 @@ import Card from "../components/Card";
 import Input from "../components/Input";
 import Select from "../components/Select";
 import Button from "../components/Button";
-import { createOrientacion, getTipificaciones } from "../services/orientaciones";
+import {
+  createOrientacion,
+  getTipificaciones,
+  type Tipificaciones,
+} from "../services/orientaciones";
 import type { Orientacion, YesNo } from "../types/orientacion";
-
-type TipificacionesData = {
-  tipo_orientacion: string[];
-  tipo_documento: string[];
-  sexo: string[];
-  poblacion: string[];
-  eps: string[];
-  motivo_atencion: string[];
-  canal_atencion: string[];
-  activacion_ruta: string[];
-  derivado_a: string[];
-  tipo_acudiente: string[];
-  pendiente_cita_presencial: string[];
-  barrio_vereda: string[];
-};
 
 function todayISO() {
   const d = new Date();
@@ -31,7 +20,7 @@ function todayISO() {
 }
 
 export default function Create() {
-  const [tips, setTips] = useState<TipificacionesData | null>(null);
+  const [tips, setTips] = useState<Tipificaciones | null>(null);
   const [loading, setLoading] = useState(false);
   const [doneId, setDoneId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -66,18 +55,18 @@ export default function Create() {
   });
 
   useEffect(() => {
-  const loadTips = async () => {
-    try {
-      const data: any = await getTipificaciones();
-      setTips(data);
-    } catch (e: any) {
-      console.error("Error cargando tipificaciones:", e);
-      setTipsErr(e?.message ?? "No pude cargar tipificaciones.");
-    }
-  };
+    const loadTips = async () => {
+      try {
+        const data = await getTipificaciones();
+        setTips(data);
+      } catch (e: any) {
+        console.error("Error cargando tipificaciones:", e);
+        setTipsErr(e?.message ?? "No pude cargar tipificaciones.");
+      }
+    };
 
-  loadTips();
-}, []);
+    loadTips();
+  }, []);
 
   useEffect(() => {
     const preloadFromDocumento = async () => {
@@ -89,8 +78,28 @@ export default function Create() {
       setPrefillLoading(true);
 
       try {
-        const res = await fetch(`/api/orientaciones?id=${encodeURIComponent(documento)}`);
+        const token = localStorage.getItem("token");
+
+        const res = await fetch(
+          `/api/orientaciones?id=${encodeURIComponent(documento)}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token || ""}`,
+            },
+          }
+        );
+
         const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(
+            data?.error ||
+              data?.detail ||
+              "No se pudo cargar la información del documento"
+          );
+        }
 
         if (data?.found && Array.isArray(data.items) && data.items.length > 0) {
           const last = data.items[0];
@@ -128,8 +137,9 @@ export default function Create() {
             id: documento,
           }));
         }
-      } catch (e) {
+      } catch (e: any) {
         console.error("Error cargando historial del documento:", e);
+        setError(e?.message ?? "No se pudo cargar la información previa.");
       } finally {
         setPrefillLoading(false);
       }
@@ -175,6 +185,7 @@ export default function Create() {
 
       setForm({
         id: documentoActual,
+        ...baseFields,
         fecha: todayISO(),
         tipo_orientacion: "",
         motivo: "",
@@ -183,7 +194,6 @@ export default function Create() {
         derivado_a: "",
         observacion: "",
         pendiente_cita_presencial: "NO",
-        ...baseFields,
       });
     } catch (e: any) {
       setError(e?.message ?? "Error guardando.");
@@ -199,7 +209,7 @@ export default function Create() {
       <main className="mx-auto max-w-6xl px-4 py-8">
         <h2 className="text-2xl font-black text-brand-800">Crear registro</h2>
 
-        <Card className="p-5 mt-6">
+        <Card className="mt-6 p-5">
           {tipsErr && (
             <div className="mb-4 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm text-amber-800">
               {tipsErr} (El formulario seguirá funcionando con opciones básicas.)
@@ -224,7 +234,15 @@ export default function Create() {
               value={form.tipo_documento}
               onChange={(e) => setForm({ ...form, tipo_documento: e.target.value })}
             >
-              {(tips?.tipo_documento || ["CC", "TI", "RC", "PPT", "CE", "PASAPORTE", "OTRO"]).map((v) => (
+              {(tips?.tipo_documento || [
+                "CC",
+                "TI",
+                "RC",
+                "PPT",
+                "CE",
+                "PASAPORTE",
+                "OTRO",
+              ]).map((v) => (
                 <option key={v} value={v}>
                   {v}
                 </option>
