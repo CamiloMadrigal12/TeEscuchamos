@@ -43,7 +43,7 @@ export default function Search() {
     <div className="min-h-screen bg-slate-50">
       <BrandHeader />
 
-      <main className="mx-auto max-w-6xl px-4 py-8">
+      <main className="mx-auto max-w-7xl px-4 py-8">
         <h2 className="text-2xl font-black text-brand-800">Buscar</h2>
         <p className="mt-1 text-sm text-slate-600">Consulta por documento (ID).</p>
 
@@ -97,13 +97,14 @@ export default function Search() {
                     <th className="px-4 py-3 text-left font-semibold">Nombre</th>
                     <th className="px-4 py-3 text-left font-semibold">Orientación</th>
                     <th className="px-4 py-3 text-left font-semibold">Profesional</th>
+                    <th className="px-4 py-3 text-left font-semibold">Observación</th>
                     <th className="px-4 py-3 text-left font-semibold">Acción</th>
                   </tr>
                 </thead>
 
                 <tbody>
                   {items.map((item, idx) => (
-                    <tr key={(item as any).id ?? idx} className="border-t border-slate-100">
+                    <tr key={(item as any).id ?? idx} className="border-t border-slate-100 align-top">
                       <td className="px-4 py-3">
                         {(item as any).fecha ? String((item as any).fecha) : ""}
                       </td>
@@ -113,6 +114,9 @@ export default function Search() {
                       <td className="px-4 py-3">{(item as any).nombre_completo ?? ""}</td>
                       <td className="px-4 py-3">{(item as any).tipo_orientacion ?? ""}</td>
                       <td className="px-4 py-3">{(item as any).profesional ?? ""}</td>
+                      <td className="px-4 py-3 whitespace-pre-wrap max-w-md">
+                        {(item as any).observacion ?? ""}
+                      </td>
                       <td className="px-4 py-3">
                         <Button
                           variant="primary"
