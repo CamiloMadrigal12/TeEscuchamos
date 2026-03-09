@@ -27,7 +27,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { username, password } = req.body || {};
 
     if (!username || !password) {
-      return res.status(400).json({ error: "Faltan campos" });
+      return res.status(400).json({
+        error: "Faltan campos",
+        debug: {
+          hasUsername: Boolean(username),
+          hasPassword: Boolean(password),
+        },
+      });
     }
 
     const r = await db().query(
@@ -41,14 +47,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const u = r.rows[0];
 
-    if (!u || !u.is_active) {
-      return res.status(401).json({ error: "Credenciales inválidas" });
+    if (!u) {
+      return res.status(401).json({
+        error: "Credenciales inválidas",
+        debug: {
+          reason: "user_not_found",
+          username: String(username).trim(),
+        },
+      });
     }
 
-    const ok = await bcrypt.compare(String(password), u.password_hash);
+    if (!u.is_active) {
+      return res.status(401).json({
+        error: "Credenciales inválidas",
+        debug: {
+          reason: "user_inactive",
+          username: u.username,
+        },
+      });
+    }
+
+    const ok = await bcrypt.compare(String(password), String(u.password_hash));
 
     if (!ok) {
-      return res.status(401).json({ error: "Credenciales inválidas" });
+      return res.status(401).json({
+        error: "Credenciales inválidas",
+        debug: {
+          reason: "password_mismatch",
+          username: u.username,
+          hashPrefix: String(u.password_hash).slice(0, 7),
+          passwordLength: String(password).length,
+        },
+      });
     }
 
     const token = signToken({
