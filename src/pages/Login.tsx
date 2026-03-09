@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Card from "../components/Card";
 import Input from "../components/Input";
 import Button from "../components/Button";
+import { supabase } from "../services/supabaseClient";
 
 import logoAlcaldia from "../../logos/logoalcaldia.png";
 import logoTeEscuchamos from "../../logos/teescuchamos.png";
@@ -11,7 +12,6 @@ export default function Login() {
   const nav = useNavigate();
   const [loading, setLoading] = useState(false);
 
-  // Si ya hay token, manda al sistema
   useEffect(() => {
     const token = localStorage.getItem("token");
     const user = localStorage.getItem("user");
@@ -72,7 +72,8 @@ export default function Login() {
                   return;
                 }
 
-                const res = await fetch("/api/auth-login", {
+                // 1) Primero intenta login local (admin en app_users)
+                const localRes = await fetch("/api/auth-login", {
                   method: "POST",
                   headers: {
                     "Content-Type": "application/json",
@@ -83,14 +84,42 @@ export default function Login() {
                   }),
                 });
 
-                const data = await res.json();
+                const localData = await localRes.json();
 
-                if (!res.ok) {
-                  throw new Error(data?.error || "Credenciales inválidas");
+                if (localRes.ok) {
+                  localStorage.setItem("token", localData.token);
+                  localStorage.setItem(
+                    "user",
+                    JSON.stringify({
+                      ...localData.user,
+                      authType: "local",
+                    })
+                  );
+
+                  nav("/buscar", { replace: true });
+                  return;
                 }
 
-                localStorage.setItem("token", data.token);
-                localStorage.setItem("user", JSON.stringify(data.user));
+                // 2) Si no entra como local, intenta con Supabase Auth
+                const { data, error } = await supabase.auth.signInWithPassword({
+                  email: username,
+                  password,
+                });
+
+                if (error || !data?.session || !data?.user) {
+                  throw new Error("Credenciales inválidas");
+                }
+
+                localStorage.setItem("token", data.session.access_token);
+                localStorage.setItem(
+                  "user",
+                  JSON.stringify({
+                    username: data.user.email,
+                    full_name: data.user.user_metadata?.full_name || data.user.email || "Usuario",
+                    role: "user",
+                    authType: "supabase",
+                  })
+                );
 
                 nav("/buscar", { replace: true });
               } catch (e: any) {
@@ -103,7 +132,7 @@ export default function Login() {
             <Input
               name="username"
               label="Usuario"
-              placeholder="Ingrese su usuario"
+              placeholder="admin o correo@dominio.com"
               required
             />
 
@@ -121,7 +150,7 @@ export default function Login() {
           </form>
 
           <div className="mt-4 text-xs text-slate-500">
-            Acceso con usuarios internos del sistema.
+            Admin entra con usuario interno. Operadores entran con su cuenta de Supabase.
           </div>
         </Card>
       </div>
