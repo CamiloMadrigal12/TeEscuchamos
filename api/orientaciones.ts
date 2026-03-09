@@ -34,10 +34,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const result = await db().query(
         `
-          select *
+          select
+            id,
+            documento,
+            tipo_documento,
+            fecha,
+            tipo_orientacion,
+            nombre_completo,
+            genero,
+            poblacion,
+            edad,
+            barrio_vereda,
+            direccion,
+            telefono,
+            eps,
+            motivo,
+            canal_atencion,
+            activa_ruta,
+            derivado_a,
+            tipo_acudiente,
+            nombre_acudiente,
+            telefono_acudiente,
+            observacion,
+            pendiente_cita_presencial,
+            profesional,
+            created_at,
+            updated_at
           from public.orientaciones
           where documento = $1
-          order by created_at desc
+          order by fecha desc nulls last, created_at desc
         `,
         [documento]
       );
@@ -55,6 +80,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!documento) {
         return sendJson(res, 400, {
           error: "Campo requerido: id (documento)",
+        });
+      }
+
+      if (!body.tipo_documento) {
+        return sendJson(res, 400, {
+          error: "Campo requerido: tipo_documento",
+        });
+      }
+
+      if (!body.fecha) {
+        return sendJson(res, 400, {
+          error: "Campo requerido: fecha",
+        });
+      }
+
+      if (!body.nombre_completo) {
+        return sendJson(res, 400, {
+          error: "Campo requerido: nombre_completo",
         });
       }
 
@@ -87,7 +130,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
             $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22
           )
-          returning id
+          returning
+            id,
+            documento,
+            fecha,
+            tipo_orientacion,
+            nombre_completo,
+            profesional,
+            created_at
         `,
         [
           documento,
@@ -118,7 +168,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return sendJson(res, 200, {
         ok: true,
         id: documento,
-        db_id: result.rows[0]?.id ?? null,
+        item: result.rows[0] ?? null,
       });
     }
 
@@ -126,7 +176,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       error: "Método no permitido",
     });
   } catch (e: any) {
-    console.error("POST /api/orientaciones error:", e);
+    console.error("/api/orientaciones error:", e);
 
     return sendJson(res, 500, {
       error: e?.message ?? "Error interno",
