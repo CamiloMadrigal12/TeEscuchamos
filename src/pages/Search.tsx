@@ -12,6 +12,7 @@ export default function Search() {
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<Orientacion[]>([]);
   const [msg, setMsg] = useState<string | null>(null);
+  const [selected, setSelected] = useState<any | null>(null);
   const nav = useNavigate();
 
   async function handleSearch() {
@@ -114,20 +115,26 @@ export default function Search() {
                       <td className="px-4 py-3">{(item as any).nombre_completo ?? ""}</td>
                       <td className="px-4 py-3">{(item as any).tipo_orientacion ?? ""}</td>
                       <td className="px-4 py-3">{(item as any).profesional ?? ""}</td>
-                      <td className="px-4 py-3 whitespace-pre-wrap max-w-md">
+                      <td className="max-w-md whitespace-pre-wrap px-4 py-3">
                         {(item as any).observacion ?? ""}
                       </td>
                       <td className="px-4 py-3">
-                        <Button
-                          variant="primary"
-                          onClick={() =>
-                            handleNuevaAtencion(
-                              String((item as any).documento ?? (item as any).id ?? id.trim())
-                            )
-                          }
-                        >
-                          Nueva atención
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button variant="ghost" onClick={() => setSelected(item as any)}>
+                            Ver
+                          </Button>
+
+                          <Button
+                            variant="primary"
+                            onClick={() =>
+                              handleNuevaAtencion(
+                                String((item as any).documento ?? (item as any).id ?? id.trim())
+                              )
+                            }
+                          >
+                            Nueva atención
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -137,6 +144,137 @@ export default function Search() {
           )}
         </Card>
       </main>
+
+      {selected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-800">Detalle de atención</h3>
+
+              <button
+                onClick={() => setSelected(null)}
+                className="text-xl text-slate-500 hover:text-slate-800"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
+              <div>
+                <div className="font-semibold text-slate-700">Documento</div>
+                <div>{selected.documento ?? ""}</div>
+              </div>
+
+              <div>
+                <div className="font-semibold text-slate-700">Tipo documento</div>
+                <div>{selected.tipo_documento ?? ""}</div>
+              </div>
+
+              <div>
+                <div className="font-semibold text-slate-700">Fecha</div>
+                <div>{selected.fecha ?? ""}</div>
+              </div>
+
+              <div>
+                <div className="font-semibold text-slate-700">Tipo de orientación</div>
+                <div>{selected.tipo_orientacion ?? ""}</div>
+              </div>
+
+              <div>
+                <div className="font-semibold text-slate-700">Nombre completo</div>
+                <div>{selected.nombre_completo ?? ""}</div>
+              </div>
+
+              <div>
+                <div className="font-semibold text-slate-700">Género</div>
+                <div>{selected.genero ?? ""}</div>
+              </div>
+
+              <div>
+                <div className="font-semibold text-slate-700">Población</div>
+                <div>{selected.poblacion ?? ""}</div>
+              </div>
+
+              <div>
+                <div className="font-semibold text-slate-700">Edad</div>
+                <div>{selected.edad ?? ""}</div>
+              </div>
+
+              <div>
+                <div className="font-semibold text-slate-700">Barrio / Vereda</div>
+                <div>{selected.barrio_vereda ?? ""}</div>
+              </div>
+
+              <div>
+                <div className="font-semibold text-slate-700">Dirección</div>
+                <div>{selected.direccion ?? ""}</div>
+              </div>
+
+              <div>
+                <div className="font-semibold text-slate-700">Teléfono</div>
+                <div>{selected.telefono ?? ""}</div>
+              </div>
+
+              <div>
+                <div className="font-semibold text-slate-700">EPS</div>
+                <div>{selected.eps ?? ""}</div>
+              </div>
+
+              <div>
+                <div className="font-semibold text-slate-700">Motivo</div>
+                <div>{selected.motivo ?? ""}</div>
+              </div>
+
+              <div>
+                <div className="font-semibold text-slate-700">Canal de atención</div>
+                <div>{selected.canal_atencion ?? ""}</div>
+              </div>
+
+              <div>
+                <div className="font-semibold text-slate-700">Activa ruta</div>
+                <div>{selected.activa_ruta ?? ""}</div>
+              </div>
+
+              <div>
+                <div className="font-semibold text-slate-700">Derivado a</div>
+                <div>{selected.derivado_a ?? ""}</div>
+              </div>
+
+              <div>
+                <div className="font-semibold text-slate-700">Tipo acudiente</div>
+                <div>{selected.tipo_acudiente ?? ""}</div>
+              </div>
+
+              <div>
+                <div className="font-semibold text-slate-700">Nombre acudiente</div>
+                <div>{selected.nombre_acudiente ?? ""}</div>
+              </div>
+
+              <div>
+                <div className="font-semibold text-slate-700">Teléfono acudiente</div>
+                <div>{selected.telefono_acudiente ?? ""}</div>
+              </div>
+
+              <div>
+                <div className="font-semibold text-slate-700">Pendiente cita presencial</div>
+                <div>{selected.pendiente_cita_presencial ?? ""}</div>
+              </div>
+
+              <div>
+                <div className="font-semibold text-slate-700">Profesional</div>
+                <div>{selected.profesional ?? ""}</div>
+              </div>
+
+              <div className="md:col-span-2">
+                <div className="font-semibold text-slate-700">Observación</div>
+                <div className="mt-1 whitespace-pre-wrap rounded-lg bg-slate-50 p-3">
+                  {selected.observacion ?? ""}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
