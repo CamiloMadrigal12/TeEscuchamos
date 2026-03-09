@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import jwt from "jsonwebtoken";
 import { db } from "./_db.js";
+import { requireUser } from "./_auth.js";
 
 function allowCors(req: VercelRequest, res: VercelResponse) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -13,29 +13,6 @@ function allowCors(req: VercelRequest, res: VercelResponse) {
   }
 
   return false;
-}
-
-type TokenPayload = {
-  id: string | number;
-  username: string;
-  full_name: string;
-  role: string;
-};
-
-function getTokenPayload(req: VercelRequest): TokenPayload {
-  const auth = req.headers.authorization || "";
-  const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
-
-  if (!token) {
-    throw new Error("Token requerido");
-  }
-
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    throw new Error("Falta variable de entorno: JWT_SECRET");
-  }
-
-  return jwt.verify(token, secret) as TokenPayload;
 }
 
 function csvEscape(value: unknown) {
@@ -51,10 +28,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(405).json({ error: "Método no permitido" });
     }
 
-    const user = getTokenPayload(req);
+    const user = requireUser(req);
 
     if (user.role !== "admin") {
-      return res.status(403).json({ error: "No autorizado" });
+      return res.status(403).json({ error: "Solo admin puede descargar la base" });
     }
 
     const result = await db().query(`
@@ -128,12 +105,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="orientaciones.csv"`
+      'attachment; filename="orientaciones.csv"'
     );
 
     return res.status(200).send(csv);
   } catch (e: any) {
     console.error("/api/export-orientaciones error:", e);
+
     return res.status(500).json({
       error: e?.message ?? "Error interno",
     });

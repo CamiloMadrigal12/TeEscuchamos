@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import Card from "../components/Card";
 import Input from "../components/Input";
 import Button from "../components/Button";
-import { supabase } from "../services/supabaseClient";
 
 import logoAlcaldia from "../../logos/logoalcaldia.png";
 import logoTeEscuchamos from "../../logos/teescuchamos.png";
@@ -12,37 +11,47 @@ export default function Login() {
   const nav = useNavigate();
   const [loading, setLoading] = useState(false);
 
-  // ✅ Si ya hay usuario logueado, manda al dashboard
+  // Si ya hay token, manda al sistema
   useEffect(() => {
-    (async () => {
-      const { data } = await supabase.auth.getUser();
-      if (data?.user) nav("/", { replace: true });
-    })();
+    const token = localStorage.getItem("token");
+    const user = localStorage.getItem("user");
+
+    if (token && user) {
+      nav("/buscar", { replace: true });
+    }
   }, [nav]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700">
-      <div className="mx-auto max-w-6xl px-4 py-12 grid lg:grid-cols-2 gap-10 items-center">
+      <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-12 lg:grid-cols-2">
         <div className="text-white">
-          <div className="flex items-center gap-6 mb-6">
-            <img src={logoAlcaldia} alt="Alcaldía de Copacabana" className="h-14 object-contain" />
-            <img src={logoTeEscuchamos} alt="Te Escuchamos" className="h-14 object-contain" />
+          <div className="mb-6 flex items-center gap-6">
+            <img
+              src={logoAlcaldia}
+              alt="Alcaldía de Copacabana"
+              className="h-14 object-contain"
+            />
+            <img
+              src={logoTeEscuchamos}
+              alt="Te Escuchamos"
+              className="h-14 object-contain"
+            />
           </div>
 
           <h1 className="text-4xl font-black tracking-tight">
             Orientaciones
-            <span className="block text-white/80 text-2xl font-semibold mt-2">
+            <span className="mt-2 block text-2xl font-semibold text-white/80">
               Registro • Consulta • Seguimiento
             </span>
           </h1>
 
-          <p className="mt-4 text-white/80 max-w-xl">
+          <p className="mt-4 max-w-xl text-white/80">
             Accede al sistema para registrar la atención y consultar historiales.
           </p>
         </div>
 
         <Card className="p-6 lg:p-8">
-          <div className="text-brand-800 text-xl font-black">Iniciar sesión</div>
+          <div className="text-xl font-black text-brand-800">Iniciar sesión</div>
 
           <form
             className="mt-6 space-y-4"
@@ -50,39 +59,61 @@ export default function Login() {
               e.preventDefault();
               setLoading(true);
 
-              const form = e.currentTarget as HTMLFormElement;
-              const fd = new FormData(form);
+              try {
+                const form = e.currentTarget as HTMLFormElement;
+                const fd = new FormData(form);
 
-              const email = String(fd.get("email") || "").trim();
-              const password = String(fd.get("password") || "");
+                const username = String(fd.get("username") || "").trim();
+                const password = String(fd.get("password") || "");
 
-              if (!email || !password) {
-                alert("Ingrese usuario y contraseña");
+                if (!username || !password) {
+                  alert("Ingrese usuario y contraseña");
+                  setLoading(false);
+                  return;
+                }
+
+                const res = await fetch("/api/auth-login", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    username,
+                    password,
+                  }),
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                  throw new Error(data?.error || "Credenciales inválidas");
+                }
+
+                localStorage.setItem("token", data.token);
+                localStorage.setItem("user", JSON.stringify(data.user));
+
+                nav("/buscar", { replace: true });
+              } catch (e: any) {
+                alert(e?.message || "Error iniciando sesión");
+              } finally {
                 setLoading(false);
-                return;
               }
-
-              const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
-              setLoading(false);
-
-              if (error) {
-                alert(error.message || "Usuario o contraseña inválidos");
-                return;
-              }
-
-              // ✅ valida que de verdad quedó usuario (evita loops raros)
-              const u = await supabase.auth.getUser();
-              if (!u.data?.user) {
-                alert("No se pudo validar la sesión. Intenta de nuevo.");
-                return;
-              }
-
-              nav("/", { replace: true });
             }}
           >
-            <Input name="email" label="Usuario (correo)" placeholder="correo@dominio.com" required />
-            <Input name="password" label="Contraseña" type="password" placeholder="••••••••" required />
+            <Input
+              name="username"
+              label="Usuario"
+              placeholder="Ingrese su usuario"
+              required
+            />
+
+            <Input
+              name="password"
+              label="Contraseña"
+              type="password"
+              placeholder="••••••••"
+              required
+            />
 
             <Button className="w-full" type="submit" disabled={loading}>
               {loading ? "Ingresando..." : "Entrar"}
@@ -90,7 +121,7 @@ export default function Login() {
           </form>
 
           <div className="mt-4 text-xs text-slate-500">
-            * Si el usuario es nuevo, confirma el correo en Supabase o usa “Reset password”.
+            Acceso con usuarios internos del sistema.
           </div>
         </Card>
       </div>
