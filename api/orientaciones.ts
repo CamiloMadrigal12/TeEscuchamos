@@ -1,135 +1,137 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { allowCors, getAppToken, resolveDriveItem, graphFetch, tableName, sendJson } from "./_graph.js";
+import { db } from "./_db.js";
 
-type RowValue = any[];
+function allowCors(req: VercelRequest, res: VercelResponse) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
-function nowISO() {
-  return new Date().toISOString();
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return true;
+  }
+
+  return false;
 }
 
-// Orden EXACTO de columnas en el Excel Base_Orientaciones_actualizado.xlsx
-const COLS = [
-  "ID",
-  "TIPO_DOCUMENTO",
-  "FECHA",
-  "TIPO_ORIENTACION",
-  "NOMBRE_COMPLETO",
-  "GENERO",
-  "POBLACION",
-  "EDAD",
-  "BARRIO_VEREDA",
-  "DIRECCION",
-  "TELEFONO",
-  "EPS",
-  "MOTIVO",
-  "CANAL_ATENCION",
-  "ACTIVA_RUTA",
-  "DERIVADO_A",
-  "TIPO_ACUDIENTE",
-  "NOMBRE_ACUDIENTE",
-  "TELEFONO_ACUDIENTE",
-  "OBSERVACION",
-  "PENDIENTE_CITA_PRESENCIAL",
-  "PROFESIONAL",
-  "CREATED_AT",
-  "UPDATED_AT",
-] as const;
-
-function toExcelRow(body: any): RowValue {
-  const created = nowISO();
-  const updated = created;
-
-  return [
-    body.id ?? body.ID ?? "",
-    body.tipo_documento ?? body.TIPO_DOCUMENTO ?? "",
-    body.fecha ?? body.FECHA ?? "",
-    body.tipo_orientacion ?? body.TIPO_ORIENTACION ?? "",
-    body.nombre_completo ?? body.NOMBRE_COMPLETO ?? "",
-    body.genero ?? body.GENERO ?? "",
-    body.poblacion ?? body.POBLACION ?? "",
-    Number(body.edad ?? body.EDAD ?? 0),
-    body.barrio_vereda ?? body.BARRIO_VEREDA ?? "",
-    body.direccion ?? body.DIRECCION ?? "",
-    body.telefono ?? body.TELEFONO ?? "",
-    body.eps ?? body.EPS ?? "",
-    body.motivo ?? body.MOTIVO ?? "",
-    body.canal_atencion ?? body.CANAL_ATENCION ?? "",
-    body.activa_ruta ?? body.ACTIVA_RUTA ?? "NO",
-    body.derivado_a ?? body.DERIVADO_A ?? "",
-    body.tipo_acudiente ?? body.TIPO_ACUDIENTE ?? "",
-    body.nombre_acudiente ?? body.NOMBRE_ACUDIENTE ?? "",
-    body.telefono_acudiente ?? body.TELEFONO_ACUDIENTE ?? "",
-    body.observacion ?? body.OBSERVACION ?? "",
-    body.pendiente_cita_presencial ?? body.PENDIENTE_CITA_PRESENCIAL ?? "NO",
-    body.profesional ?? body.PROFESIONAL ?? "",
-    created,
-    updated,
-  ];
-}
-
-function rowToObject(values: any[]): any {
-  const obj: any = {};
-  COLS.forEach((c, i) => {
-    obj[c.toLowerCase()] = values[i];
-  });
-  obj.id = obj.id ?? obj["id"];
-  return obj;
-}
-
-async function listRows(token: string, driveId: string, itemId: string) {
-  const tname = tableName();
-  const r = await graphFetch<any>(
-    token,
-    `/drives/${driveId}/items/${itemId}/workbook/tables/${encodeURIComponent(tname)}/rows?$top=10000`
-  );
-  return (r.value || []) as Array<{ index: number; values: any[][] }>;
+function sendJson(res: VercelResponse, status: number, data: unknown) {
+  res.status(status).setHeader("Content-Type", "application/json");
+  res.end(JSON.stringify(data));
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (allowCors(req, res)) return;
 
   try {
-    const token = await getAppToken();
-    const { driveId, itemId } = await resolveDriveItem(token);
-
-    if (!driveId || !itemId) {
-      throw new Error("No pude resolver driveId/itemId. Verifica FILE_SHARE_URL.");
-    }
-
     if (req.method === "GET") {
-      const id = String(req.query.id ?? "").trim();
-      if (!id) return sendJson(res, 400, { error: "Query param requerido: id" });
+      const documento = String(req.query.id ?? "").trim();
 
-      const rows = await listRows(token, driveId, itemId);
-      const items = rows
-        .map((r) => rowToObject(r.values?.[0] || []))
-        .filter((o) => String(o.id ?? "").trim() === id);
+      if (!documento) {
+        return sendJson(res, 400, {
+          error: "Query param requerido: id",
+        });
+      }
 
-      return sendJson(res, 200, { found: items.length > 0, items });
+      const result = await db().query(
+        `
+          select *
+          from public.orientaciones
+          where documento = $1
+          order by created_at desc
+        `,
+        [documento]
+      );
+
+      return sendJson(res, 200, {
+        found: result.rows.length > 0,
+        items: result.rows,
+      });
     }
 
     if (req.method === "POST") {
       const body = req.body ?? {};
-      const id = String(body.id ?? "").trim();
-      if (!id) return sendJson(res, 400, { error: "Campo requerido: id (documento)" });
+      const documento = String(body.id ?? "").trim();
 
-      const row = toExcelRow(body);
-      const tname = tableName();
+      if (!documento) {
+        return sendJson(res, 400, {
+          error: "Campo requerido: id (documento)",
+        });
+      }
 
-      await graphFetch<any>(
-        token,
-        `/drives/${driveId}/items/${itemId}/workbook/tables/${encodeURIComponent(tname)}/rows/add`,
-        {
-          method: "POST",
-          body: JSON.stringify({ values: [row] }),
-        }
+      const result = await db().query(
+        `
+          insert into public.orientaciones (
+            documento,
+            tipo_documento,
+            fecha,
+            tipo_orientacion,
+            nombre_completo,
+            genero,
+            poblacion,
+            edad,
+            barrio_vereda,
+            direccion,
+            telefono,
+            eps,
+            motivo,
+            canal_atencion,
+            activa_ruta,
+            derivado_a,
+            tipo_acudiente,
+            nombre_acudiente,
+            telefono_acudiente,
+            observacion,
+            pendiente_cita_presencial,
+            profesional
+          ) values (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
+            $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22
+          )
+          returning id
+        `,
+        [
+          documento,
+          String(body.tipo_documento ?? ""),
+          body.fecha || null,
+          String(body.tipo_orientacion ?? ""),
+          String(body.nombre_completo ?? ""),
+          String(body.genero ?? ""),
+          String(body.poblacion ?? ""),
+          Number(body.edad ?? 0),
+          String(body.barrio_vereda ?? ""),
+          String(body.direccion ?? ""),
+          String(body.telefono ?? ""),
+          String(body.eps ?? ""),
+          String(body.motivo ?? ""),
+          String(body.canal_atencion ?? ""),
+          String(body.activa_ruta ?? "NO"),
+          String(body.derivado_a ?? ""),
+          String(body.tipo_acudiente ?? ""),
+          String(body.nombre_acudiente ?? ""),
+          String(body.telefono_acudiente ?? ""),
+          String(body.observacion ?? ""),
+          String(body.pendiente_cita_presencial ?? "NO"),
+          String(body.profesional ?? ""),
+        ]
       );
 
-      return sendJson(res, 200, { ok: true, id });
+      return sendJson(res, 200, {
+        ok: true,
+        id: documento,
+        db_id: result.rows[0]?.id ?? null,
+      });
     }
 
-    return sendJson(res, 405, { error: "Método no permitido" });
+    return sendJson(res, 405, {
+      error: "Método no permitido",
+    });
   } catch (e: any) {
-    return sendJson(res, 500, { error: e?.message ?? "Error" });
+    console.error("POST /api/orientaciones error:", e);
+
+    return sendJson(res, 500, {
+      error: e?.message ?? "Error interno",
+      detail: String(e),
+      stack: e?.stack ?? null,
+    });
   }
 }

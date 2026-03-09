@@ -1,5 +1,22 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { allowCors, sendJson } from "./_graph.js";
+
+function allowCors(req: VercelRequest, res: VercelResponse) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return true;
+  }
+
+  return false;
+}
+
+function sendJson(res: VercelResponse, status: number, data: unknown) {
+  res.status(status).setHeader("Content-Type", "application/json");
+  res.end(JSON.stringify(data));
+}
 
 const BARRIOS_VEREDAS = [
   "La Veta",
@@ -59,11 +76,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       "SEGUIMIENTO VIOLENCIA SEXUAL",
       "GESTION DE CASO",
     ],
-
     tipo_documento: ["CC", "TI", "RC", "PPT", "CE", "PASAPORTE", "OTRO"],
-
     sexo: ["HOMBRE", "MUJER", "OTRO"],
-
     poblacion: [
       "INFANCIA",
       "JUVENTUD",
@@ -79,7 +93,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       "PPL",
       "COMUNIDADES ETNICAS",
     ],
-
     eps: [
       "SURA",
       "SAVIA SALUD",
@@ -91,7 +104,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       "POLICIA NACIONAL",
       "OTRA",
     ],
-
     motivo_atencion: [
       "PROBLEMAS FAMILIARES",
       "CONSUMO DE SPA",
@@ -102,11 +114,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       "INFORMACIÓN",
       "OTRO",
     ],
-
     canal_atencion: ["FIJO", "LINEA", "DERIVACIÓN", "OTRO"],
-
     activacion_ruta: ["SI", "NO"],
-
     derivado_a: [
       "HOSPITAL",
       "BOMBEROS",
@@ -117,11 +126,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       "INSPECCIÓN",
       "OTRO",
     ],
-
-    tipo_acudiente: ["MADRE", "PADRE", "HERMANO(A)", "ABUELO(A)", "TIO(A)", "TUTOR(A)", "OTRO"],
-
+    tipo_acudiente: [
+      "MADRE",
+      "PADRE",
+      "HERMANO(A)",
+      "ABUELO(A)",
+      "TIO(A)",
+      "TUTOR(A)",
+      "OTRO",
+    ],
     pendiente_cita_presencial: ["SI", "NO"],
-
     barrio_vereda: BARRIOS_VEREDAS,
   };
 
