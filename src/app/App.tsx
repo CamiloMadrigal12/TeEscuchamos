@@ -15,17 +15,66 @@ function RequireAuth({ children }: { children: JSX.Element }) {
   useEffect(() => {
     let alive = true;
 
-    (async () => {
-      const { data } = await supabase.auth.getUser();
-      if (!alive) return;
+    const validateSession = async () => {
+      try {
+        const rawUser = localStorage.getItem("user");
+        const token = localStorage.getItem("token");
 
-      setAuthed(!!data?.user);
-      setChecking(false);
-    })();
+        if (!rawUser || !token) {
+          if (!alive) return;
+          setAuthed(false);
+          setChecking(false);
+          return;
+        }
 
-    // 🔁 escucha cambios de sesión (login/logout)
+        const parsedUser = JSON.parse(rawUser);
+
+        // Admin/local login
+        if (parsedUser?.authType === "local") {
+          if (!alive) return;
+          setAuthed(true);
+          setChecking(false);
+          return;
+        }
+
+        // Usuario normal / Supabase Auth
+        if (parsedUser?.authType === "supabase") {
+          const { data } = await supabase.auth.getUser();
+
+          if (!alive) return;
+
+          setAuthed(!!data?.user);
+          setChecking(false);
+          return;
+        }
+
+        if (!alive) return;
+        setAuthed(false);
+        setChecking(false);
+      } catch {
+        if (!alive) return;
+        setAuthed(false);
+        setChecking(false);
+      }
+    };
+
+    validateSession();
+
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      setAuthed(!!session);
+      try {
+        const rawUser = localStorage.getItem("user");
+        const parsedUser = rawUser ? JSON.parse(rawUser) : null;
+
+        if (parsedUser?.authType === "supabase") {
+          setAuthed(!!session);
+        } else if (parsedUser?.authType === "local") {
+          setAuthed(true);
+        } else {
+          setAuthed(false);
+        }
+      } catch {
+        setAuthed(false);
+      }
     });
 
     return () => {
@@ -34,7 +83,7 @@ function RequireAuth({ children }: { children: JSX.Element }) {
     };
   }, []);
 
-  if (checking) return null; // o un loader
+  if (checking) return null;
 
   if (!authed) return <Navigate to="/login" replace />;
 
