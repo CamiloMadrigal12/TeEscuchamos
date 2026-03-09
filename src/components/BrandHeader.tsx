@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Button from "./Button";
+import { supabase } from "../services/supabaseClient";
 
 type SessionUser = {
   id?: string | number;
   username?: string;
   full_name?: string;
   role?: string;
+  authType?: "local" | "supabase";
 };
 
 export default function BrandHeader() {
@@ -36,10 +38,18 @@ export default function BrandHeader() {
     nav(path);
   };
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    nav("/login", { replace: true });
+  const logout = async () => {
+    try {
+      if (user?.authType === "supabase") {
+        await supabase.auth.signOut();
+      }
+    } catch (e) {
+      console.error("Error cerrando sesión de Supabase:", e);
+    } finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      nav("/login", { replace: true });
+    }
   };
 
   const handleDownload = async () => {
