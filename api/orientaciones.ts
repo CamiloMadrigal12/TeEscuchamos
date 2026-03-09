@@ -1,6 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { db } from "./_db.js";
-import { requireUser } from "./_auth.js";
 
 function allowCors(req: VercelRequest, res: VercelResponse) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -24,9 +23,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (allowCors(req, res)) return;
 
   try {
-    // Protege toda la ruta: buscar y crear requieren sesión
-    requireUser(req);
-
     if (req.method === "GET") {
       const documento = String(req.query.id ?? "").trim();
 
