@@ -1,7 +1,7 @@
 export type YesNo = "SI" | "NO";
 
 export type Orientacion = {
-  id: string; // Documento
+  id: string;
   tipo_documento: string;
   fecha: string;
   tipo_orientacion: string;
@@ -22,5 +22,6 @@ export type Orientacion = {
   telefono_acudiente: string;
   observacion: string;
   pendiente_cita_presencial: YesNo;
+  asistio_a_cita?: string;
   profesional: string;
 };

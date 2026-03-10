@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import * as XLSX from "xlsx";
 import { db } from "./_db.js";
 import { requireUser } from "./_auth.js";
 
@@ -13,11 +14,6 @@ function allowCors(req: VercelRequest, res: VercelResponse) {
   }
 
   return false;
-}
-
-function csvEscape(value: unknown) {
-  const str = value == null ? "" : String(value);
-  return `"${str.replace(/"/g, '""')}"`;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -36,10 +32,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const result = await db().query(`
       select
-        id,
         documento,
         tipo_documento,
-        fecha,
+        to_char(fecha, 'DD/MM/YYYY') as fecha,
         tipo_orientacion,
         nombre_completo,
         genero,
@@ -58,6 +53,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         telefono_acudiente,
         observacion,
         pendiente_cita_presencial,
+        asistio_a_cita,
         profesional,
         created_at,
         updated_at
@@ -65,50 +61,53 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       order by fecha desc nulls last, created_at desc
     `);
 
-    const headers = [
-      "id",
-      "documento",
-      "tipo_documento",
-      "fecha",
-      "tipo_orientacion",
-      "nombre_completo",
-      "genero",
-      "poblacion",
-      "edad",
-      "barrio_vereda",
-      "direccion",
-      "telefono",
-      "eps",
-      "motivo",
-      "canal_atencion",
-      "activa_ruta",
-      "derivado_a",
-      "tipo_acudiente",
-      "nombre_acudiente",
-      "telefono_acudiente",
-      "observacion",
-      "pendiente_cita_presencial",
-      "profesional",
-      "created_at",
-      "updated_at",
-    ];
+    const rows = result.rows.map((row) => ({
+      Documento: row.documento,
+      "Tipo documento": row.tipo_documento,
+      Fecha: row.fecha,
+      "Tipo orientación": row.tipo_orientacion,
+      "Nombre completo": row.nombre_completo,
+      Género: row.genero,
+      Población: row.poblacion,
+      Edad: row.edad,
+      "Barrio / Vereda": row.barrio_vereda,
+      Dirección: row.direccion,
+      Teléfono: row.telefono,
+      EPS: row.eps,
+      Motivo: row.motivo,
+      "Canal de atención": row.canal_atencion,
+      "Activa ruta": row.activa_ruta,
+      "Derivado a": row.derivado_a,
+      "Tipo acudiente": row.tipo_acudiente,
+      "Nombre acudiente": row.nombre_acudiente,
+      "Teléfono acudiente": row.telefono_acudiente,
+      Observación: row.observacion,
+      "Pendiente cita presencial": row.pendiente_cita_presencial,
+      "Asistió a cita": row.asistio_a_cita,
+      Profesional: row.profesional,
+      "Creado en": row.created_at,
+      "Actualizado en": row.updated_at,
+    }));
 
-    const lines = [
-      headers.join(","),
-      ...result.rows.map((row) =>
-        headers.map((h) => csvEscape(row[h])).join(",")
-      ),
-    ];
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, "Orientaciones");
 
-    const csv = "\ufeff" + lines.join("\n");
+    const buffer = XLSX.write(wb, {
+      type: "buffer",
+      bookType: "xlsx",
+    });
 
-    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
     res.setHeader(
       "Content-Disposition",
-      'attachment; filename="orientaciones.csv"'
+      'attachment; filename="orientaciones.xlsx"'
     );
 
-    return res.status(200).send(csv);
+    return res.status(200).send(buffer);
   } catch (e: any) {
     console.error("/api/export-orientaciones error:", e);
 

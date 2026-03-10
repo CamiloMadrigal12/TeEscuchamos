@@ -23,6 +23,7 @@ export type Tipificaciones = {
   derivado_a: string[];
   tipo_acudiente: string[];
   pendiente_cita_presencial: Array<"SI" | "NO">;
+  asistio_a_cita: string[];
   barrio_vereda: string[];
 };
 

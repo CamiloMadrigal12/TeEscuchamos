@@ -28,6 +28,7 @@ export default function Create() {
   const [prefillLoading, setPrefillLoading] = useState(false);
 
   const yesNo: YesNo[] = ["SI", "NO"];
+  const asistioOptions = ["SI", "NO", "REPROGRAMADA"];
 
   const [form, setForm] = useState<Orientacion>({
     id: "",
@@ -51,6 +52,7 @@ export default function Create() {
     telefono_acudiente: "",
     observacion: "",
     pendiente_cita_presencial: "NO",
+    asistio_a_cita: "",
     profesional: "",
   });
 
@@ -109,7 +111,6 @@ export default function Create() {
             id: last.documento ?? documento,
             tipo_documento: last.tipo_documento ?? "CC",
             fecha: todayISO(),
-
             nombre_completo: last.nombre_completo ?? "",
             genero: last.genero ?? "",
             poblacion: last.poblacion ?? "",
@@ -122,7 +123,6 @@ export default function Create() {
             nombre_acudiente: last.nombre_acudiente ?? "",
             telefono_acudiente: last.telefono_acudiente ?? "",
             profesional: last.profesional ?? "",
-
             tipo_orientacion: "",
             motivo: "",
             canal_atencion: "",
@@ -130,6 +130,7 @@ export default function Create() {
             derivado_a: "",
             observacion: "",
             pendiente_cita_presencial: "NO",
+            asistio_a_cita: "",
           }));
         } else {
           setForm((prev) => ({
@@ -151,9 +152,23 @@ export default function Create() {
   const canSubmit = useMemo(() => {
     return (
       form.id.trim().length > 0 &&
-      String(form.tipo_documento).trim().length > 0 &&
-      String(form.fecha).trim().length > 0 &&
-      form.nombre_completo.trim().length > 0
+      form.tipo_documento.trim().length > 0 &&
+      form.fecha.trim().length > 0 &&
+      form.tipo_orientacion.trim().length > 0 &&
+      form.nombre_completo.trim().length > 0 &&
+      form.genero.trim().length > 0 &&
+      form.poblacion.trim().length > 0 &&
+      Number(form.edad) > 0 &&
+      form.barrio_vereda.trim().length > 0 &&
+      form.direccion.trim().length > 0 &&
+      form.telefono.trim().length > 0 &&
+      form.eps.trim().length > 0 &&
+      form.motivo.trim().length > 0 &&
+      form.canal_atencion.trim().length > 0 &&
+      form.activa_ruta.trim().length > 0 &&
+      form.derivado_a.trim().length > 0 &&
+      form.observacion.trim().length > 0 &&
+      form.profesional.trim().length > 0
     );
   }, [form]);
 
@@ -194,6 +209,7 @@ export default function Create() {
         derivado_a: "",
         observacion: "",
         pendiente_cita_presencial: "NO",
+        asistio_a_cita: "",
       });
     } catch (e: any) {
       setError(e?.message ?? "Error guardando.");
@@ -224,7 +240,7 @@ export default function Create() {
 
           <div className="grid gap-4 md:grid-cols-3">
             <Input
-              label="Documento (ID)"
+              label="Documento"
               value={form.id}
               onChange={(e) => setForm({ ...form, id: e.target.value })}
             />
@@ -445,6 +461,24 @@ export default function Create() {
               ))}
             </Select>
 
+            <Select
+              label="Asistió a cita"
+              value={form.asistio_a_cita ?? ""}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  asistio_a_cita: e.target.value,
+                })
+              }
+            >
+              <option value="">Seleccione...</option>
+              {((tips as any)?.asistio_a_cita || asistioOptions).map((v: string) => (
+                <option key={v} value={v}>
+                  {v}
+                </option>
+              ))}
+            </Select>
+
             <Input
               label="Profesional"
               value={form.profesional}
@@ -469,8 +503,6 @@ export default function Create() {
               </div>
             )}
           </div>
-
-          
         </Card>
       </main>
     </div>

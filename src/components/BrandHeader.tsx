@@ -86,7 +86,7 @@ export default function BrandHeader() {
 
       const a = document.createElement("a");
       a.href = url;
-      a.download = "orientaciones.csv";
+      a.download = "orientaciones.xlsx"
       document.body.appendChild(a);
       a.click();
       a.remove();

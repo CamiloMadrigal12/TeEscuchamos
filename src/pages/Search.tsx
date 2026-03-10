@@ -53,13 +53,13 @@ export default function Search() {
       <main className="mx-auto max-w-7xl px-4 py-8">
         <h2 className="text-2xl font-black text-brand-800">Buscar</h2>
         <p className="mt-1 text-sm text-slate-600">
-          Consulta por documento (ID).
+          Consulta por documento .
         </p>
 
         <Card className="mt-6 p-5">
           <div className="grid items-end gap-3 md:grid-cols-3">
             <Input
-              label="Documento (ID)"
+              label="Documento "
               value={id}
               onChange={(e) => setId(e.target.value)}
               placeholder="Ej: 123456789"

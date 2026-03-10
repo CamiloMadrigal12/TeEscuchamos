@@ -132,7 +132,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     asistio_a_cita: ["SI", "NO", "REPROGRAMADA"],
 
-    barrio_vereda: BARRIOS_VEREDAS,
+    barrio_vereda: BARRIOS_VEREDAS, 
   };
 
   return sendJson(res, 200, data);
