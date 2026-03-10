@@ -470,12 +470,7 @@ export default function Create() {
             )}
           </div>
 
-          <div className="mt-4 text-xs text-slate-500">
-            Endpoints:{" "}
-            <code className="rounded bg-slate-100 px-1">GET /api/orientaciones?id=</code> y{" "}
-            <code className="rounded bg-slate-100 px-1">POST /api/orientaciones</code> y{" "}
-            <code className="rounded bg-slate-100 px-1">GET /api/tipificaciones</code>.
-          </div>
+          
         </Card>
       </main>
     </div>

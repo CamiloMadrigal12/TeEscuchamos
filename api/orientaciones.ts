@@ -38,7 +38,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             id,
             documento,
             tipo_documento,
-            fecha,
+            to_char(fecha, 'DD/MM/YYYY') as fecha,
             tipo_orientacion,
             nombre_completo,
             genero,
@@ -57,6 +57,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             telefono_acudiente,
             observacion,
             pendiente_cita_presencial,
+            asistio_a_cita,
             profesional,
             created_at,
             updated_at
@@ -95,9 +96,93 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
 
+      if (!body.tipo_orientacion) {
+        return sendJson(res, 400, {
+          error: "Campo requerido: tipo_orientacion",
+        });
+      }
+
       if (!body.nombre_completo) {
         return sendJson(res, 400, {
           error: "Campo requerido: nombre_completo",
+        });
+      }
+
+      if (!body.genero) {
+        return sendJson(res, 400, {
+          error: "Campo requerido: genero",
+        });
+      }
+
+      if (!body.poblacion) {
+        return sendJson(res, 400, {
+          error: "Campo requerido: poblacion",
+        });
+      }
+
+      if (!body.edad && Number(body.edad) !== 0) {
+        return sendJson(res, 400, {
+          error: "Campo requerido: edad",
+        });
+      }
+
+      if (!body.barrio_vereda) {
+        return sendJson(res, 400, {
+          error: "Campo requerido: barrio_vereda",
+        });
+      }
+
+      if (!body.direccion) {
+        return sendJson(res, 400, {
+          error: "Campo requerido: direccion",
+        });
+      }
+
+      if (!body.telefono) {
+        return sendJson(res, 400, {
+          error: "Campo requerido: telefono",
+        });
+      }
+
+      if (!body.eps) {
+        return sendJson(res, 400, {
+          error: "Campo requerido: eps",
+        });
+      }
+
+      if (!body.motivo) {
+        return sendJson(res, 400, {
+          error: "Campo requerido: motivo",
+        });
+      }
+
+      if (!body.canal_atencion) {
+        return sendJson(res, 400, {
+          error: "Campo requerido: canal_atencion",
+        });
+      }
+
+      if (!body.activa_ruta) {
+        return sendJson(res, 400, {
+          error: "Campo requerido: activa_ruta",
+        });
+      }
+
+      if (!body.derivado_a) {
+        return sendJson(res, 400, {
+          error: "Campo requerido: derivado_a",
+        });
+      }
+
+      if (!body.observacion) {
+        return sendJson(res, 400, {
+          error: "Campo requerido: observacion",
+        });
+      }
+
+      if (!body.profesional) {
+        return sendJson(res, 400, {
+          error: "Campo requerido: profesional",
         });
       }
 
@@ -125,16 +210,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             telefono_acudiente,
             observacion,
             pendiente_cita_presencial,
+            asistio_a_cita,
             profesional
           ) values (
             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
-            $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22
+            $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23
           )
           returning
             id,
             documento,
             tipo_documento,
-            fecha,
+            to_char(fecha, 'DD/MM/YYYY') as fecha,
             tipo_orientacion,
             nombre_completo,
             genero,
@@ -153,6 +239,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             telefono_acudiente,
             observacion,
             pendiente_cita_presencial,
+            asistio_a_cita,
             profesional,
             created_at,
             updated_at
@@ -178,7 +265,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           String(body.nombre_acudiente ?? ""),
           String(body.telefono_acudiente ?? ""),
           String(body.observacion ?? ""),
-          String(body.pendiente_cita_presencial ?? "NO"),
+          String(body.pendiente_cita_presencial ?? ""),
+          String(body.asistio_a_cita ?? ""),
           String(body.profesional ?? ""),
         ]
       );
