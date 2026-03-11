@@ -19,6 +19,10 @@ function todayISO() {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+function upper(value: string) {
+  return value.toUpperCase();
+}
+
 export default function Create() {
   const [tips, setTips] = useState<Tipificaciones | null>(null);
   const [loading, setLoading] = useState(false);
@@ -178,24 +182,34 @@ export default function Create() {
     setLoading(true);
 
     try {
-      const r = await createOrientacion(form);
+      const payload: Orientacion = {
+        ...form,
+        id: upper(form.id),
+        nombre_completo: upper(form.nombre_completo),
+        direccion: upper(form.direccion),
+        nombre_acudiente: upper(form.nombre_acudiente),
+        observacion: upper(form.observacion),
+        profesional: upper(form.profesional),
+      };
+
+      const r = await createOrientacion(payload);
       setDoneId(r.id);
 
-      const documentoActual = form.id;
+      const documentoActual = payload.id;
       const baseFields = {
         tipo_documento: form.tipo_documento,
-        nombre_completo: form.nombre_completo,
+        nombre_completo: payload.nombre_completo,
         genero: form.genero,
         poblacion: form.poblacion,
         edad: form.edad,
         barrio_vereda: form.barrio_vereda,
-        direccion: form.direccion,
+        direccion: payload.direccion,
         telefono: form.telefono,
         eps: form.eps,
         tipo_acudiente: form.tipo_acudiente,
-        nombre_acudiente: form.nombre_acudiente,
+        nombre_acudiente: payload.nombre_acudiente,
         telefono_acudiente: form.telefono_acudiente,
-        profesional: form.profesional,
+        profesional: payload.profesional,
       };
 
       setForm({
@@ -241,8 +255,9 @@ export default function Create() {
           <div className="grid gap-4 md:grid-cols-3">
             <Input
               label="Documento"
+              className="uppercase"
               value={form.id}
-              onChange={(e) => setForm({ ...form, id: e.target.value })}
+              onChange={(e) => setForm({ ...form, id: upper(e.target.value) })}
             />
 
             <Select
@@ -287,8 +302,11 @@ export default function Create() {
 
             <Input
               label="Nombre completo"
+              className="uppercase"
               value={form.nombre_completo}
-              onChange={(e) => setForm({ ...form, nombre_completo: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, nombre_completo: upper(e.target.value) })
+              }
             />
 
             <Select
@@ -339,8 +357,11 @@ export default function Create() {
 
             <Input
               label="Dirección"
+              className="uppercase"
               value={form.direccion}
-              onChange={(e) => setForm({ ...form, direccion: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, direccion: upper(e.target.value) })
+              }
             />
 
             <Input
@@ -428,8 +449,11 @@ export default function Create() {
 
             <Input
               label="Nombre acudiente"
+              className="uppercase"
               value={form.nombre_acudiente}
-              onChange={(e) => setForm({ ...form, nombre_acudiente: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, nombre_acudiente: upper(e.target.value) })
+              }
             />
 
             <Input
@@ -440,8 +464,11 @@ export default function Create() {
 
             <Input
               label="Observación"
+              className="uppercase"
               value={form.observacion}
-              onChange={(e) => setForm({ ...form, observacion: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, observacion: upper(e.target.value) })
+              }
             />
 
             <Select
@@ -481,8 +508,11 @@ export default function Create() {
 
             <Input
               label="Profesional"
+              className="uppercase"
               value={form.profesional}
-              onChange={(e) => setForm({ ...form, profesional: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, profesional: upper(e.target.value) })
+              }
             />
           </div>
 
