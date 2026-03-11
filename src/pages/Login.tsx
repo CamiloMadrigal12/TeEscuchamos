@@ -14,9 +14,9 @@ export default function Login() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    const user = localStorage.getItem("user");
+    const rawUser = localStorage.getItem("user");
 
-    if (token && user) {
+    if (token && rawUser) {
       nav("/buscar", { replace: true });
     }
   }, [nav]);
@@ -72,35 +72,39 @@ export default function Login() {
                   return;
                 }
 
-                // 1) Primero intenta login local (admin en app_users)
-                const localRes = await fetch("/api/auth-login", {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    username,
-                    password,
-                  }),
-                });
+                // 1) Intento admin/local
+                try {
+                  const localRes = await fetch("/api/auth-login", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                      username,
+                      password,
+                    }),
+                  });
 
-                const localData = await localRes.json();
+                  if (localRes.ok) {
+                    const localData = await localRes.json();
 
-                if (localRes.ok) {
-                  localStorage.setItem("token", localData.token);
-                  localStorage.setItem(
-                    "user",
-                    JSON.stringify({
-                      ...localData.user,
-                      authType: "local",
-                    })
-                  );
+                    localStorage.setItem("token", localData.token);
+                    localStorage.setItem(
+                      "user",
+                      JSON.stringify({
+                        ...localData.user,
+                        authType: "local",
+                      })
+                    );
 
-                  nav("/buscar", { replace: true });
-                  return;
+                    nav("/buscar", { replace: true });
+                    return;
+                  }
+                } catch {
+                  // sigue con Supabase
                 }
 
-                // 2) Si no entra como local, intenta con Supabase Auth
+                // 2) Intento usuario normal / Supabase
                 const { data, error } = await supabase.auth.signInWithPassword({
                   email: username,
                   password,
@@ -115,7 +119,10 @@ export default function Login() {
                   "user",
                   JSON.stringify({
                     username: data.user.email,
-                    full_name: data.user.user_metadata?.full_name || data.user.email || "Usuario",
+                    full_name:
+                      data.user.user_metadata?.full_name ||
+                      data.user.email ||
+                      "Usuario",
                     role: "user",
                     authType: "supabase",
                   })
